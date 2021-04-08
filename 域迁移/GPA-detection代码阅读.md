@@ -1,4 +1,9 @@
 # GPA代码阅读
+## fasterRCNN的整体流程
+![](./fasterRCNN.jpg)
+- backbone的代码是在[vgg16中定义的self.RCNN_base](../GPA-detection/lib/model/faster_rcnn/vgg16.py)中定义的
+- 在[lib/model/faster_rcnn/faster_rcnn](../GPA-detection/lib/model/faster_rcnn/faster_rcnn.py)的47行由base_feat变量获得feature map
+
 ## train_baseline(只有fasterRCNN)
 ### main
 - 首先为每种数据集设置Anchor的相关参数
@@ -43,4 +48,20 @@
 - 添加了目标域数据的train和val的数据获取，这里目标域和源域调用的都是**sampler类**，所以之前的**tgt_sampler类并没有用到**。
 - 添加目标域的数据tensor holder，与源域类似
 - 初始化网络，此处在实例化网络类的时候添加了mode参数和rpn_mode参数
-- **下一步从epoch循环开始**
+- 开始训练：调用[fasterRCNN](#libmodeladaptive_faster_rcnnvgg16)（注:此处与baseline调用的文件不一样）的代码
+  - 添加输入tgt_im_data, tgt_im_info, tgt_gt_boxes, tgt_num_boxes
+  - 添加返回值
+    - 与源域相对应的目标域参数tgt_rois, tgt_cls_prob, tgt_bbox_pred, tgt_rois_label
+    - 在baseline的四种loss返回值之间插入了 **_(占位符)**
+    - 添加RCNN_loss_intra, RCNN_loss_inter, RPN_loss_intra, RPN_loss_inter
+
+### lib/model/adaptive_faster_rcnn/vgg16
+- import不同
+  - 添加model.gcn.models中的GCN
+  - 添加model.gcn.utils中的get_adj
+- init不同
+  - 添加mode和rpn_mode属性
+  - 添加lower_margin属性，**作用暂时未知**，初始值为0.5
+  - 添加margin属性，**作用暂时未知**，初始值为1
+- forward不同
+  - 添加目标域数据的初始化
